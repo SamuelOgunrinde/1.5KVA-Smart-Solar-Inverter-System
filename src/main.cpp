@@ -1,16 +1,21 @@
 #include "config.h"
 #include <Arduino.h>
-
 #include "pzem_module.h"
-#include "relay_module.h"
 #include "dht_module.h"
+#include "relay_module.h"
 #include "blynk_module.h"
+#include "load_management/load_management_module.h"
+#include "logger_module.h"
 
 // Create module objects
 PZEMModule pzem;
 DHTModule dht;
-RelayModule relay;
 BlynkModule blynk(WIFI_SSID, WIFI_PASSWORD);
+RelayModule relay;
+
+// Assuming a relay priority of 1 > 2 > 3 > 4,
+// and thresholds of 840W (warning), 1020W (critical) and 1400W (emergency)
+LoadManagementModule loadManager(&relay, 100.0, 200.0, 300.0);
 
 // Timer variables
 unsigned long previousMillis = 0;
@@ -21,14 +26,13 @@ void setup()
     // Initialize serial monitor
     Serial.begin(115200);
 
-    Serial.println();
-    Serial.println("SMART INVERTER MONITORING SYSTEM");
-
     // Initialize modules
-    relay.begin();
-    blynk.begin();
     pzem.begin();
     dht.begin();
+    blynk.begin();
+    relay.begin();
+    // Initialize cloud logger
+    loggerBegin();
 
     Serial.println("System Initialization Complete");
 }
@@ -52,41 +56,8 @@ void loop()
         // Read DHT sensor data
         dht.update();
 
-        // Print values to serial monitor
-        Serial.println("========== SENSOR DATA ==========");
-
-        Serial.print("Voltage: ");
-        Serial.print(pzem.getVoltage());
-        Serial.println(" V");
-
-        Serial.print("Current: ");
-        Serial.print(pzem.getCurrent());
-        Serial.println(" A");
-
-        Serial.print("Power: ");
-        Serial.print(pzem.getPower());
-        Serial.println(" W");
-
-        Serial.print("Energy: ");
-        Serial.print(pzem.getEnergy());
-        Serial.println(" kWh");
-
-        Serial.print("Frequency: ");
-        Serial.print(pzem.getFrequency());
-        Serial.println(" Hz");
-
-        Serial.print("Power Factor: ");
-        Serial.println(pzem.getPowerFactor());
-
-        Serial.print("Temperature: ");
-        Serial.print(dht.getTemperature());
-        Serial.println(" °C");
-
-        Serial.print("Humidity: ");
-        Serial.print(dht.getHumidity());
-        Serial.println(" %");
-
-        Serial.println("================================");
+        // Update load management based on current power
+        loadManager.update(pzem.getPower());
 
         // Send data to Blynk dashboard
         blynk.sendSensorData(
@@ -97,7 +68,22 @@ void loop()
             pzem.getFrequency(),
             pzem.getPowerFactor(),
             dht.getTemperature(),
+            dht.getHumidity() 
+        );
+
+        loggerAddReading(
+            pzem.getVoltage(),
+            pzem.getCurrent(),
+            pzem.getPower(),
+            pzem.getEnergy(),
+            pzem.getFrequency(),
+            pzem.getPowerFactor(),
+            dht.getTemperature(),
             dht.getHumidity()
         );
     }
+
+    // Update cloud database with current readings
+    loggerUpdate();
+
 }

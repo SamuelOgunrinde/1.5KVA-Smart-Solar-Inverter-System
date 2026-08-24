@@ -5,8 +5,8 @@
 #include <PZEM004Tv30.h>
 
 // UART2 pins for ESP32
-#define PZEM_RX_PIN 16
-#define PZEM_TX_PIN 17
+#define PZEM_RX_PIN 32
+#define PZEM_TX_PIN 33
 
 class PZEMModule
 {

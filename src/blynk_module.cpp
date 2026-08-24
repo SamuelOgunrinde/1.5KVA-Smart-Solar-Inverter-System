@@ -1,6 +1,7 @@
 #include "config.h"
 #include "blynk_module.h"
 #include "relay_module.h"
+#include "load_management/load_management_module.h"
 #include <WiFi.h>
 #include <BlynkSimpleEsp32.h>
 
@@ -12,6 +13,9 @@ BlynkModule::BlynkModule(const char* wifiSSID,
     ssid = wifiSSID;
     password = wifiPassword;
 }
+
+extern RelayModule relay;
+// extern LoadManagementModule loadManager;
 
 // Initialize WiFi and Blynk
 void BlynkModule::begin()
@@ -55,9 +59,8 @@ void BlynkModule::sendSensorData(float voltage,
     Blynk.virtualWrite(V5, powerFactor);
     Blynk.virtualWrite(V6, temperature);
     Blynk.virtualWrite(V7, humidity);
+    // Blynk.virtualWrite(V20, loadManager.getStatus());  
 }
-
-extern RelayModule relay;
 
 // Relay 1
 BLYNK_WRITE(V10)

@@ -29,6 +29,13 @@ void PZEMModule::update()
     frequency = pzem.frequency();
     powerFactor = pzem.pf();
 
+    Serial.printf("V=%.2f I=%.2f P=%.2f E=%.3f F=%.2f PF=%.2f\n",
+                  voltage,
+                  current,
+                  power,
+                  energy,
+                  frequency,
+                  powerFactor);
     // Error handling
     if (isnan(voltage)) voltage = 0;
     if (isnan(current)) current = 0;
